@@ -213,14 +213,30 @@ DUCKEOF
 $SUDO chmod +x "${DUCKDNS_DIR}/duck.sh"
 
 # Cronjob cada 5 minutos
+# Nota: crontab -l retorna exit 1 si no hay crontab previo, y grep -v retorna
+# exit 1 si no hay líneas de salida → ambos rompen set -euo pipefail.
+# Solución: capturar cada paso por separado con || true.
 CRON_JOB="*/5 * * * * /opt/duckdns/duck.sh >/dev/null 2>&1"
-( crontab -l 2>/dev/null | grep -v "duckdns" ; echo "$CRON_JOB" ) | crontab -
+CRON_ACTUAL=$(crontab -l 2>/dev/null || true)
+CRON_LIMPIO=$(echo "$CRON_ACTUAL" | grep -v "duckdns" || true)
+if [ -n "$CRON_LIMPIO" ]; then
+    printf "%s\n%s\n" "$CRON_LIMPIO" "$CRON_JOB" | crontab -
+else
+    echo "$CRON_JOB" | crontab -
+fi
 
-# Ejecutar una vez ahora para actualizar la IP inmediatamente
-bash "${DUCKDNS_DIR}/duck.sh"
-log "DuckDNS configurado para ${DOMAIN} (actualización cada 5 min)."
-info "Espera 30 segundos para que DNS propague antes de obtener el certificado..."
-sleep 30
+# Ejecutar una vez ahora y verificar que DuckDNS responde OK
+info "Actualizando IP en DuckDNS..."
+DUCK_RESULT=$(bash "${DUCKDNS_DIR}/duck.sh" 2>&1 || true)
+DUCK_CHECK=$(curl -s "https://www.duckdns.org/update?domains=${DUCKDNS_SUBDOMAIN}&token=${DUCKDNS_TOKEN}&ip=" || true)
+if [ "$DUCK_CHECK" = "OK" ]; then
+    log "DuckDNS actualizado correctamente para ${DOMAIN}."
+else
+    warn "DuckDNS respondió: '${DUCK_CHECK}'. Verifica subdominio y token si el certificado falla."
+fi
+
+info "Esperando 45 segundos para propagación DNS antes de pedir el certificado..."
+sleep 45
 
 # =============================================================================
 # PASO 6: Obtener certificado SSL con Certbot
@@ -533,7 +549,7 @@ info "Esperando que los servicios estén saludables..."
 sleep 20
 
 # Verificar estado
-if docker compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
+if docker compose -f "$COMPOSE_FILE" ps | grep -q "Up" 2>/dev/null || true; then
     log "Servicios Docker corriendo."
 else
     warn "Algunos servicios pueden no estar listos. Verificar con: docker compose ps"
