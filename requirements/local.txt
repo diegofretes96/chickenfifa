@@ -1,0 +1,14 @@
+-r base.txt
+
+# Dev tools
+django-debug-toolbar==4.4.6
+factory-boy==3.3.1
+faker==33.1.0
+pytest-django==4.9.0
+pytest-cov==6.0.0
+coverage==7.6.10
+
+# Code quality
+ruff==0.8.6
+mypy==1.14.0
+django-stubs==5.1.1

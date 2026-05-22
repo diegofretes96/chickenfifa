@@ -1,0 +1,25 @@
+# Core
+Django==5.1.4
+psycopg[binary]==3.2.3
+django-environ==0.11.2
+gunicorn==23.0.0
+
+# Static files & media
+whitenoise==6.8.2
+Pillow==11.1.0
+
+# Task queue (async point recalculation)
+celery==5.4.0
+redis==5.2.1
+django-celery-results==2.5.1
+
+# Utilities
+django-extensions==3.2.3
+django-htmx==1.21.0
+
+# Security
+django-csp==3.8
+
+# Forms
+django-crispy-forms==2.3
+crispy-bootstrap5==2024.10

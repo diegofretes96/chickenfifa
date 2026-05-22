@@ -1,0 +1,87 @@
+# =============================================================================
+# docker-compose.yml — Entorno de DESARROLLO LOCAL
+# Servicios: web (Django+Celery), db (PostgreSQL), redis
+# =============================================================================
+version: "3.9"
+
+x-common-env: &common-env
+  env_file:
+    - .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.local
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: chickenfifa_db
+      POSTGRES_USER: chickenfifa
+      POSTGRES_PASSWORD: chickenfifa_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chickenfifa -d chickenfifa_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5432:5432"
+
+  # ── Redis (broker Celery) ───────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"
+
+  # ── Django Web ──────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    <<: *common-env
+    command: gunicorn
+    volumes:
+      - .:/app                          # Hot-reload en desarrollo
+      - media_data:/app/mediafiles
+      - static_data:/app/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Worker ───────────────────────────────────────────────────────────
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    <<: *common-env
+    command: celery
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:

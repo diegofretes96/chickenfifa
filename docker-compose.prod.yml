@@ -1,0 +1,41 @@
+# =============================================================================
+# docker-compose.prod.yml — Sobreescritura para PRODUCCIÓN (OCI)
+# Uso: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# =============================================================================
+version: "3.9"
+
+services:
+  web:
+    image: ${OCI_REGISTRY}/${OCI_NAMESPACE}/${OCI_REPO_NAME}:${IMAGE_TAG:-latest}
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+    volumes:
+      - media_data:/app/mediafiles
+      - static_data:/app/staticfiles
+    # En producción NO montamos el código fuente como volumen
+
+  celery:
+    image: ${OCI_REGISTRY}/${OCI_NAMESPACE}/${OCI_REPO_NAME}:${IMAGE_TAG:-latest}
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+
+  # Nginx como reverse proxy para servir static/media y hacer TLS termination
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_data:/app/staticfiles:ro
+      - media_data:/app/mediafiles:ro
+      - certbot_data:/etc/letsencrypt:ro
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:
+  certbot_data:
