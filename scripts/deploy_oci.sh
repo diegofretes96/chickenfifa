@@ -194,6 +194,38 @@ $SUDO ufw --force enable
 
 log "Firewall configurado (22, 80, 443)."
 
+# OCI Ubuntu trae reglas iptables REJECT al final que bloquean puertos
+# aunque UFW los haya permitido. Eliminarlas para que el tráfico fluya.
+$SUDO iptables -D INPUT  -j REJECT --reject-with icmp-host-prohibited 2>/dev/null && \
+    log "Eliminada regla iptables REJECT en INPUT (default OCI)." || true
+$SUDO iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited 2>/dev/null && \
+    log "Eliminada regla iptables REJECT en FORWARD (default OCI)." || true
+
+# Asegurar que los puertos 80 y 443 están explícitamente permitidos en iptables
+$SUDO iptables -C INPUT -p tcp --dport 80  -j ACCEPT 2>/dev/null || \
+    $SUDO iptables -I INPUT 1 -p tcp --dport 80  -j ACCEPT
+$SUDO iptables -C INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || \
+    $SUDO iptables -I INPUT 2 -p tcp --dport 443 -j ACCEPT
+
+# Persistir reglas iptables para que sobrevivan reboot
+$SUDO apt-get install -y -qq iptables-persistent 2>/dev/null || true
+$SUDO netfilter-persistent save 2>/dev/null || \
+    $SUDO iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+
+warn "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+warn "ACCIÓN REQUERIDA EN OCI CONSOLE (si aún no lo hiciste):"
+warn "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Networking → VCN → Security Lists → Ingress Rules → Add:"
+echo "    Puerto 80  (HTTP)  origen 0.0.0.0/0"
+echo "    Puerto 443 (HTTPS) origen 0.0.0.0/0"
+echo ""
+read -rp "¿Ya tienes los puertos 80 y 443 abiertos en OCI Console? [s/N]: " OCI_PORTS_OK
+[[ "$OCI_PORTS_OK" =~ ^[sS]$ ]] || {
+    warn "Abre los puertos en OCI Console y vuelve a ejecutar el script."
+    warn "O ejecuta directamente: sudo bash scripts/certbot_fix.sh"
+    exit 0
+}
+
 # =============================================================================
 # PASO 5: Configurar DuckDNS
 # =============================================================================
@@ -252,49 +284,37 @@ else
     warn "Certbot ya instalado. Omitiendo."
 fi
 
-# Configuración Nginx temporal para que Certbot pueda hacer el challenge HTTP-01
-$SUDO tee /etc/nginx/sites-available/chickenfifa-temp > /dev/null << NGINXEOF
-server {
-    listen 80;
-    server_name ${DOMAIN};
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 200 'Aguarda...';
-        add_header Content-Type text/plain;
-    }
-}
-NGINXEOF
-
-$SUDO mkdir -p /var/www/certbot
-$SUDO ln -sf /etc/nginx/sites-available/chickenfifa-temp /etc/nginx/sites-enabled/chickenfifa-temp
+# Usar modo STANDALONE: certbot levanta su propio servidor HTTP en el puerto 80.
+# Más confiable que webroot en OCI porque evita problemas de configuración de Nginx.
+# Requiere detener Nginx temporalmente.
 $SUDO rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
-$SUDO nginx -t && $SUDO systemctl reload nginx
+$SUDO systemctl stop nginx
+log "Nginx detenido temporalmente para challenge Certbot."
 
-log "Nginx temporal configurado para challenge HTTP."
-
-# Obtener certificado
-$SUDO certbot certonly \
-    --webroot \
-    --webroot-path=/var/www/certbot \
+# Obtener certificado con standalone
+if $SUDO certbot certonly \
+    --standalone \
+    --preferred-challenges http \
     --email "$LETSENCRYPT_EMAIL" \
     --agree-tos \
     --no-eff-email \
     --non-interactive \
-    -d "$DOMAIN" \
-    && log "Certificado SSL obtenido para ${DOMAIN}." \
-    || error "No se pudo obtener el certificado. Verifica que ${DOMAIN} apunte a la IP correcta."
+    -d "$DOMAIN"; then
+    log "Certificado SSL obtenido para ${DOMAIN}."
+else
+    # Reactivar Nginx antes de salir con error
+    $SUDO systemctl start nginx || true
+    error "No se pudo obtener el certificado. Ejecuta: sudo bash scripts/certbot_fix.sh"
+fi
 
-# Renovación automática (cronjob de Certbot)
-echo "0 3 * * * certbot renew --quiet --post-hook 'systemctl reload nginx'" | \
+# Reactivar Nginx
+$SUDO systemctl start nginx
+log "Nginx reactivado."
+
+# Renovación automática
+echo "0 3 * * * root certbot renew --quiet --deploy-hook 'systemctl reload nginx'" | \
     $SUDO tee /etc/cron.d/certbot-renew > /dev/null
-log "Renovación automática de certificado configurada (diaria a las 3am)."
-
-# Eliminar config temporal
-$SUDO rm /etc/nginx/sites-enabled/chickenfifa-temp
+log "Renovación automática configurada (3am diario)."
 
 # =============================================================================
 # PASO 7: Configurar Nginx para producción con HTTPS
