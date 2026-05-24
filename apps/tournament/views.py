@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import ExpressionWrapper, F, IntegerField, Q
 from django.shortcuts import get_object_or_404, render
 
 from apps.tournament.models import Equipo, Fase, GrupoNombre, Partido
@@ -25,9 +25,11 @@ def inicio(request):
 def grupos(request):
     grupos_data = []
     for letra in GrupoNombre.values:
-        equipos = Equipo.objects.filter(grupo=letra).order_by(
-            "-puntos_grupo", "-diferencia_goles", "-goles_favor", "nombre"
-        )
+        equipos = Equipo.objects.filter(grupo=letra).annotate(
+            dif_goles=ExpressionWrapper(
+                F("goles_favor") - F("goles_contra"), output_field=IntegerField()
+            )
+        ).order_by("-puntos_grupo", "-dif_goles", "-goles_favor", "nombre")
         partidos = Partido.objects.filter(
             fase=Fase.GRUPO, grupo=letra
         ).select_related("equipo_local", "equipo_visitante").order_by("fecha_hora")
