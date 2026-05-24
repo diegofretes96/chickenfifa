@@ -36,22 +36,22 @@ else:
     exit(1)
 PYEOF
 
-# Ejecutar migraciones
-echo "==> Ejecutando migraciones..."
-python manage.py migrate --noinput
+# Solo el servidor web ejecuta migraciones, static y superusuario
+if [ "$1" = "gunicorn" ]; then
+    echo "==> Ejecutando migraciones..."
+    python manage.py migrate --noinput
 
-# Recopilar archivos estáticos
-echo "==> Recopilando archivos estáticos..."
-python manage.py collectstatic --noinput --clear
+    echo "==> Recopilando archivos estáticos..."
+    python manage.py collectstatic --noinput --clear
 
-# Crear superusuario automático si se proporcionan las variables de entorno
-if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-    echo "==> Creando superusuario si no existe..."
-    python manage.py createsuperuser \
-        --noinput \
-        --username "${DJANGO_SUPERUSER_USERNAME:-admin}" \
-        --email "$DJANGO_SUPERUSER_EMAIL" \
-        2>/dev/null || echo "    Superusuario ya existe, omitiendo."
+    if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
+        echo "==> Creando superusuario si no existe..."
+        python manage.py createsuperuser \
+            --noinput \
+            --username "${DJANGO_SUPERUSER_USERNAME:-admin}" \
+            --email "$DJANGO_SUPERUSER_EMAIL" \
+            2>/dev/null || echo "    Superusuario ya existe, omitiendo."
+    fi
 fi
 
 echo "==> Entrypoint completado."

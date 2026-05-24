@@ -86,8 +86,8 @@ class Pronostico(models.Model):
         unique_together = [("usuario", "partido")]
         ordering = ["partido__fecha_hora"]
         indexes = [
-            models.Index(fields=["usuario", "partido"]),
-            models.Index(fields=["partido", "puntos_otorgados"]),
+            models.Index(fields=["usuario", "partido"], name="predictions__user_partido_idx"),
+            models.Index(fields=["partido", "puntos_otorgados"], name="predictions__partido_pts_idx"),
         ]
 
     def __str__(self) -> str:

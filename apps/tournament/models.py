@@ -250,8 +250,8 @@ class Partido(models.Model):
         verbose_name_plural = _("partidos")
         ordering = ["fecha_hora", "numero_partido"]
         indexes = [
-            models.Index(fields=["fase", "finalizado"]),
-            models.Index(fields=["fase", "grupo"]),
+            models.Index(fields=["fase", "finalizado"], name="tournament__fase_fec_idx"),
+            models.Index(fields=["fase", "grupo"], name="tournament__fase_grp_idx"),
         ]
 
     def __str__(self) -> str:
