@@ -14,9 +14,10 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
     volumes:
+      - .:/app                                          # código live: git pull = deploy inmediato
+      - ./docker/entrypoint.sh:/entrypoint.sh           # entrypoint live, no requiere rebuild
       - media_data:/app/mediafiles
       - static_data:/app/staticfiles
-    # En producción NO montamos el código fuente como volumen
 
   celery:
     image: ${CELERY_IMAGE:-chicken-celery}
@@ -26,6 +27,9 @@ services:
       target: runner
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+    volumes:
+      - .:/app                                          # código live
+      - ./docker/entrypoint.sh:/entrypoint.sh           # entrypoint live
 
   # Nginx como reverse proxy para servir static/media y hacer TLS termination
   nginx:
