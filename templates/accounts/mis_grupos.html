@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Mis grupos — ChickenFifa{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Lista de grupos -->
+  <div class="col-lg-8">
+    <h2 class="mb-4"><i class="bi bi-people"></i> Mis grupos</h2>
+
+    {% if grupos_miembro or grupos_creados %}
+    {% for grupo in grupos_miembro %}
+    <div class="card mb-3">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-1">
+            <a href="{% url 'accounts:detalle_grupo' grupo.pk %}"
+               class="text-decoration-none" style="color:#e8eaf0;">
+              {{ grupo.nombre }}
+            </a>
+            {% if grupo.es_publico %}
+              <span class="badge bg-secondary ms-1 small">Público</span>
+            {% endif %}
+          </h5>
+          <small class="text-muted">
+            <i class="bi bi-people"></i> {{ grupo.total_miembros }} miembros
+            &nbsp;·&nbsp;
+            <i class="bi bi-key"></i> <code style="color:#c9a227;">{{ grupo.codigo_invitacion }}</code>
+          </small>
+          {% if grupo.descripcion %}
+            <p class="text-muted small mb-0 mt-1">{{ grupo.descripcion|truncatechars:80 }}</p>
+          {% endif %}
+        </div>
+        <a href="{% url 'accounts:detalle_grupo' grupo.pk %}" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-eye"></i> Ver
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="card text-center p-5">
+      <p class="text-muted mb-0">Todavía no sos miembro de ningún grupo.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Panel lateral: crear/unirse -->
+  <div class="col-lg-4">
+
+    <!-- Unirse a un grupo -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-door-open"></i> Unirse a un grupo</h6>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'accounts:unirse_grupo' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label small">{{ unirse_form.codigo.label }}</label>
+            {{ unirse_form.codigo }}
+            {% for error in unirse_form.codigo.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-box-arrow-in-right"></i> Unirse
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Crear un grupo -->
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Crear grupo</h6>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'accounts:crear_grupo' %}">
+          {% csrf_token %}
+          {% for field in crear_form %}
+          <div class="mb-3">
+            <label class="form-label small">{{ field.label }}</label>
+            {% if field.field.widget.input_type == "checkbox" %}
+              <div class="form-check">
+                <input type="checkbox" name="{{ field.html_name }}" class="form-check-input"
+                       id="{{ field.id_for_label }}" {% if field.value %}checked{% endif %}>
+                <label class="form-check-label small text-muted" for="{{ field.id_for_label }}">
+                  {{ field.help_text }}
+                </label>
+              </div>
+            {% elif field.field.widget.input_type == "textarea" %}
+              <textarea name="{{ field.html_name }}" rows="2"
+                        class="form-control form-control-sm {% if field.errors %}is-invalid{% endif %}"
+                        placeholder="Opcional">{{ field.value|default:"" }}</textarea>
+            {% else %}
+              <input type="{{ field.field.widget.input_type }}"
+                     name="{{ field.html_name }}"
+                     class="form-control form-control-sm {% if field.errors %}is-invalid{% endif %}"
+                     {% if field.value %}value="{{ field.value }}"{% endif %}>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-plus-circle"></i> Crear grupo
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

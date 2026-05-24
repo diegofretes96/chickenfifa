@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Inicio — ChickenFifa Mundial 2026{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+  <h1 class="display-4 fw-bold" style="color:#c9a227;">🐔 ChickenFifa</h1>
+  <p class="lead text-muted">Polla del Mundial FIFA 2026 — 48 equipos · 104 partidos</p>
+  {% if not user.is_authenticated %}
+  <a href="{% url 'accounts:registro' %}" class="btn btn-primary btn-lg me-2">
+    <i class="bi bi-person-plus"></i> Crear cuenta
+  </a>
+  <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-lg">
+    Iniciar sesión
+  </a>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <!-- Próximos partidos -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-calendar3"></i> Próximos partidos</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if partidos_proximos %}
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for partido in partidos_proximos %}
+            <tr>
+              <td class="text-end pe-2">
+                <small class="text-muted d-block">{{ partido.get_fase_display }}</small>
+                {{ partido.nombre_local_display }}
+              </td>
+              <td class="text-center px-2">
+                <span class="text-muted small">{{ partido.fecha_hora|date:"d/m H:i" }}</span>
+              </td>
+              <td class="ps-2">{{ partido.nombre_visitante_display }}</td>
+              <td>
+                {% if partido.pronosticos_cerrados %}
+                  <span class="badge bg-danger"><i class="bi bi-lock"></i></span>
+                {% else %}
+                  <a href="{% url 'tournament:detalle_partido' partido.pk %}" class="badge bg-success text-decoration-none">Pronosticar</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-4">No hay partidos programados aún.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultados recientes -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-check2-circle"></i> Últimos resultados</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if partidos_recientes %}
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for partido in partidos_recientes %}
+            <tr>
+              <td class="text-end pe-2">{{ partido.nombre_local_display }}</td>
+              <td class="text-center px-3 fw-bold">
+                <span class="score-box">{{ partido.goles_local }}</span>
+                <span class="mx-1 text-muted">–</span>
+                <span class="score-box">{{ partido.goles_visitante }}</span>
+              </td>
+              <td class="ps-2">{{ partido.nombre_visitante_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-4">No hay resultados aún.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sistema de puntos -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Sistema de puntos</h5>
+  </div>
+  <div class="card-body">
+    <div class="row text-center">
+      <div class="col-md-4 mb-3">
+        <div class="puntos-badge puntos-5 fs-4 px-4 py-2 rounded-3">5 pts</div>
+        <p class="mt-2 mb-0">Resultado exacto<br><small class="text-muted">Ej: pronosticaste 2-1, fue 2-1</small></p>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="puntos-badge puntos-3 fs-4 px-4 py-2 rounded-3">3 pts</div>
+        <p class="mt-2 mb-0">Resultado correcto<br><small class="text-muted">Ej: pronosticaste 3-0, fue 2-1</small></p>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="puntos-badge" style="background:#5a3a00;color:#fff;" class="fs-4 px-4 py-2 rounded-3">2 pts</div>
+        <p class="mt-2 mb-0">Equipo clasificado<br><small class="text-muted">Solo en fase eliminatoria</small></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

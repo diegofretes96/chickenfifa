@@ -1,0 +1,26 @@
+# Normalizar saltos de línea al hacer checkout en cualquier OS
+* text=auto
+
+# Scripts de shell SIEMPRE con LF (nunca CRLF — se rompen en Linux)
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
+scripts/*.sh text eol=lf
+
+# Archivos de configuración
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+nginx.conf text eol=lf
+
+# Python
+*.py text eol=lf
+
+# Binarios — no tocar los saltos de línea
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

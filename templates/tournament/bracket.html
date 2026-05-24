@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Bracket Eliminatorias — ChickenFifa{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-diagram-3"></i> Bracket Eliminatorio — FIFA 2026</h2>
+
+{% for fase, partidos in bracket_data.items %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0" style="color:#c9a227;">
+      {% if fase == "dieciseisavos" %}Dieciseisavos de Final
+      {% elif fase == "octavos" %}Octavos de Final
+      {% elif fase == "cuartos" %}Cuartos de Final
+      {% elif fase == "semifinal" %}Semifinales
+      {% elif fase == "tercero" %}Tercer Puesto
+      {% elif fase == "final" %}Final
+      {% endif %}
+    </h5>
+    <span class="badge bg-secondary">{{ partidos|length }} partido{{ partidos|length|pluralize:"s" }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr class="text-muted small">
+          <th class="ps-3">#</th>
+          <th>Local</th>
+          <th class="text-center">Resultado</th>
+          <th>Visitante</th>
+          <th class="text-muted small">Sede</th>
+          <th class="text-muted small">Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for partido in partidos %}
+        <tr>
+          <td class="ps-3 text-muted small">{{ partido.numero_partido }}</td>
+          <td class="fw-semibold">
+            {% if partido.equipo_local %}
+              {{ partido.equipo_local.nombre }}
+              {% if partido.equipo_local.bandera %}
+                <img src="{{ partido.equipo_local.bandera.url }}" height="16" class="ms-1">
+              {% endif %}
+            {% else %}
+              <span class="text-muted fst-italic">{{ partido.placeholder_local|default:"Por determinar" }}</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if partido.resultado_disponible %}
+              <span class="fw-bold">
+                <span class="score-box">{{ partido.goles_local }}</span>
+                <span class="mx-1 text-muted">–</span>
+                <span class="score-box">{{ partido.goles_visitante }}</span>
+              </span>
+              {% if partido.penales_local is not None %}
+                <small class="text-muted d-block">(pen. {{ partido.penales_local }}–{{ partido.penales_visitante }})</small>
+              {% endif %}
+            {% elif partido.equipo_local and partido.equipo_visitante %}
+              <span class="text-muted small">{{ partido.fecha_hora|date:"d/m H:i" }}</span>
+            {% else %}
+              <span class="text-muted">–</span>
+            {% endif %}
+          </td>
+          <td class="fw-semibold">
+            {% if partido.equipo_visitante %}
+              {{ partido.equipo_visitante.nombre }}
+            {% else %}
+              <span class="text-muted fst-italic">{{ partido.placeholder_visitante|default:"Por determinar" }}</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ partido.ciudad }}</td>
+          <td class="text-muted small">{{ partido.fecha_hora|date:"d/m/Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-3">Sin partidos cargados</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+{% if not bracket_data %}
+<div class="card text-center p-5">
+  <p class="text-muted mb-0">El cuadro eliminatorio aún no ha sido definido.</p>
+</div>
+{% endif %}
+{% endblock %}

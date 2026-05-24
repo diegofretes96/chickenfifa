@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Mi perfil — ChickenFifa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-person-circle"></i> Mi perfil</h5>
+        <span class="badge badge-pts">{{ user.perfil.puntos_totales }} pts</span>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="text-center mb-4">
+            {% if perfil.avatar %}
+              <img src="{{ perfil.avatar.url }}" class="rounded-circle mb-2"
+                   style="width:90px;height:90px;object-fit:cover;border:3px solid #c9a227;">
+            {% else %}
+              <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                   style="width:90px;height:90px;background:#1e2a45;border:3px solid #c9a227;font-size:2.5rem;">
+                <i class="bi bi-person"></i>
+              </div>
+            {% endif %}
+          </div>
+
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {% if field.field.widget.input_type == "file" %}
+              <input type="file" name="{{ field.html_name }}"
+                     class="form-control {% if field.errors %}is-invalid{% endif %}">
+            {% elif field.field.widget.input_type == "textarea" %}
+              <textarea name="{{ field.html_name }}" rows="3"
+                        class="form-control {% if field.errors %}is-invalid{% endif %}">{{ field.value|default:"" }}</textarea>
+            {% else %}
+              <input type="{{ field.field.widget.input_type }}"
+                     name="{{ field.html_name }}"
+                     class="form-control {% if field.errors %}is-invalid{% endif %}"
+                     {% if field.value %}value="{{ field.value }}"{% endif %}>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+            {% if field.help_text %}
+            <div class="form-text text-muted">{{ field.help_text }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check2-circle"></i> Guardar cambios
+            </button>
+            <small class="text-muted">
+              <i class="bi bi-calendar3"></i> Miembro desde {{ perfil.fecha_registro|date:"d/m/Y" }}
+            </small>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Stats rápidas -->
+    <div class="row g-3">
+      <div class="col-4">
+        <div class="card text-center p-3">
+          <div class="fw-bold fs-3" style="color:#c9a227;">{{ user.perfil.puntos_totales }}</div>
+          <small class="text-muted">Puntos totales</small>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center p-3">
+          <div class="fw-bold fs-3" style="color:#c9a227;">{{ user.pronosticos.count }}</div>
+          <small class="text-muted">Pronósticos</small>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card text-center p-3">
+          <div class="fw-bold fs-3" style="color:#c9a227;">{{ user.grupos_polla.count }}</div>
+          <small class="text-muted">Grupos</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

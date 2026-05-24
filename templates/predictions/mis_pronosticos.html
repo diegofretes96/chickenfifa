@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Mis pronósticos — ChickenFifa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-list-check"></i> Mis pronósticos</h2>
+  <div>
+    <a href="{% url 'predictions:grupo' %}" class="btn btn-outline-light btn-sm me-2">
+      <i class="bi bi-pencil-square"></i> Fase de grupos
+    </a>
+    <a href="{% url 'predictions:eliminatoria' %}" class="btn btn-outline-light btn-sm">
+      <i class="bi bi-diagram-3"></i> Eliminatorias
+    </a>
+  </div>
+</div>
+
+{% regroup pronosticos by partido.get_fase_display as por_fase %}
+
+{% for fase_entry in por_fase %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0" style="color:#c9a227;">{{ fase_entry.grouper }}</h5>
+    <span class="badge bg-secondary">
+      {{ fase_entry.list|length }} pronóstico{{ fase_entry.list|length|pluralize:"s" }}
+    </span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr class="text-muted small">
+          <th class="ps-3">Partido</th>
+          <th class="text-center">Tu pronóstico</th>
+          <th class="text-center">Resultado</th>
+          <th class="text-center">Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pron in fase_entry.list %}
+        <tr>
+          <td class="ps-3">
+            <span class="fw-semibold">{{ pron.partido.nombre_local_display }}</span>
+            <span class="text-muted mx-1">vs</span>
+            <span class="fw-semibold">{{ pron.partido.nombre_visitante_display }}</span>
+            <br>
+            <small class="text-muted">{{ pron.partido.fecha_hora|date:"d/m/Y H:i" }}</small>
+          </td>
+          <td class="text-center">
+            <span class="score-box">{{ pron.goles_local }}</span>
+            <span class="mx-1 text-muted">–</span>
+            <span class="score-box">{{ pron.goles_visitante }}</span>
+          </td>
+          <td class="text-center fw-bold">
+            {% if pron.partido.resultado_disponible %}
+              {{ pron.partido.goles_local }}–{{ pron.partido.goles_visitante }}
+            {% else %}
+              <span class="text-muted">–</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if pron.puntos_otorgados is not None %}
+              <span class="puntos-badge puntos-{{ pron.puntos_otorgados }}">
+                {{ pron.puntos_otorgados }}
+              </span>
+            {% elif pron.partido.pronosticos_cerrados %}
+              <span class="text-muted small"><i class="bi bi-hourglass-split"></i></span>
+            {% else %}
+              <span class="text-muted small"><i class="bi bi-pencil text-success"></i></span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="card text-center p-5">
+  <p class="text-muted mb-3">Todavía no hiciste ningún pronóstico.</p>
+  <a href="{% url 'predictions:grupo' %}" class="btn btn-primary">
+    <i class="bi bi-pencil-square"></i> Pronosticar fase de grupos
+  </a>
+</div>
+{% endfor %}
+
+{% if pronosticos %}
+<!-- Resumen de puntos -->
+<div class="card">
+  <div class="card-body d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">Total de puntos acumulados:</span>
+    <span class="badge badge-pts fs-5 px-3 py-2">{{ user.perfil.puntos_totales }} pts</span>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

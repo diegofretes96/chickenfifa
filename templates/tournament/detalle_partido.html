@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load chickenfifa_extras %}
+{% block title %}Partido #{{ partido.numero_partido }} — ChickenFifa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <!-- Encabezado del partido -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="badge bg-secondary">{{ partido.get_fase_display }}</span>
+        <span class="text-muted small">Partido #{{ partido.numero_partido }}</span>
+      </div>
+      <div class="card-body text-center py-4">
+        <div class="row align-items-center g-3">
+          <div class="col-5 text-end">
+            <h3 class="fw-bold mb-0">{{ partido.nombre_local_display }}</h3>
+            {% if partido.equipo_local.bandera %}
+              <img src="{{ partido.equipo_local.bandera.url }}" height="48" class="mt-2">
+            {% endif %}
+          </div>
+          <div class="col-2">
+            {% if partido.resultado_disponible %}
+              <div class="d-flex justify-content-center align-items-center gap-2">
+                <span class="score-box" style="width:48px;height:48px;font-size:1.5rem;">{{ partido.goles_local }}</span>
+                <span class="text-muted fw-bold">–</span>
+                <span class="score-box" style="width:48px;height:48px;font-size:1.5rem;">{{ partido.goles_visitante }}</span>
+              </div>
+              {% if partido.penales_local is not None %}
+                <small class="text-muted d-block mt-1">pen. {{ partido.penales_local }}–{{ partido.penales_visitante }}</small>
+              {% endif %}
+            {% else %}
+              <div class="text-muted">
+                <div class="small">{{ partido.fecha_hora|date:"d/m/Y" }}</div>
+                <div class="fw-bold">{{ partido.fecha_hora|date:"H:i" }}</div>
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-5 text-start">
+            <h3 class="fw-bold mb-0">{{ partido.nombre_visitante_display }}</h3>
+            {% if partido.equipo_visitante.bandera %}
+              <img src="{{ partido.equipo_visitante.bandera.url }}" height="48" class="mt-2">
+            {% endif %}
+          </div>
+        </div>
+
+        {% if partido.ciudad or partido.sede %}
+        <p class="text-muted small mt-3 mb-0">
+          <i class="bi bi-geo-alt"></i>
+          {% if partido.sede %}{{ partido.sede }},{% endif %}
+          {{ partido.ciudad }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sección de pronóstico -->
+    {% if user.is_authenticated %}
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Mi pronóstico</h5>
+      </div>
+      <div class="card-body">
+        {% if partido.finalizado %}
+          {% if pronostico %}
+            <div class="row align-items-center g-2">
+              <div class="col text-end">
+                <span class="fw-bold fs-5">{{ partido.nombre_local_display }}</span>
+              </div>
+              <div class="col-auto">
+                <span class="score-box">{{ pronostico.goles_local }}</span>
+                <span class="mx-1 text-muted">–</span>
+                <span class="score-box">{{ pronostico.goles_visitante }}</span>
+              </div>
+              <div class="col text-start">
+                <span class="fw-bold fs-5">{{ partido.nombre_visitante_display }}</span>
+              </div>
+              {% if pronostico.puntos_otorgados is not None %}
+              <div class="col-12 text-center mt-2">
+                <span class="puntos-badge puntos-{{ pronostico.puntos_otorgados }} fs-5 px-3 py-1">
+                  {{ pronostico.puntos_otorgados }} pts
+                </span>
+                {% if pronostico.detalle_puntos.exacto %}
+                  <span class="ms-2 text-success small"><i class="bi bi-star-fill"></i> Exacto</span>
+                {% elif pronostico.detalle_puntos.resultado_correcto %}
+                  <span class="ms-2 text-info small"><i class="bi bi-check-circle"></i> Resultado correcto</span>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="text-muted mb-0">No hiciste un pronóstico para este partido.</p>
+          {% endif %}
+
+        {% elif partido.pronosticos_cerrados %}
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-lock"></i> Los pronósticos para este partido ya cerraron.
+            {% if pronostico %}
+              <br>Tu pronóstico: <strong>{{ pronostico.goles_local }}–{{ pronostico.goles_visitante }}</strong>
+            {% endif %}
+          </div>
+
+        {% else %}
+          <p class="text-muted small mb-3">
+            <i class="bi bi-clock"></i> Cierra: {{ partido.fecha_cierre_pronostico|date:"d/m/Y H:i" }}
+          </p>
+          <form method="post" action="{% url 'predictions:guardar' partido.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'tournament:detalle_partido' partido.pk %}">
+            <div class="row align-items-center g-3">
+              <div class="col text-end">
+                <span class="fw-semibold">{{ partido.nombre_local_display }}</span>
+              </div>
+              <div class="col-auto d-flex align-items-center gap-2">
+                <input type="number" name="goles_local" min="0" max="20"
+                       class="form-control score-input"
+                       value="{% if pronostico %}{{ pronostico.goles_local }}{% endif %}"
+                       required>
+                <span class="text-muted fw-bold">–</span>
+                <input type="number" name="goles_visitante" min="0" max="20"
+                       class="form-control score-input"
+                       value="{% if pronostico %}{{ pronostico.goles_visitante }}{% endif %}"
+                       required>
+              </div>
+              <div class="col text-start">
+                <span class="fw-semibold">{{ partido.nombre_visitante_display }}</span>
+              </div>
+            </div>
+            <div class="text-center mt-3">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle"></i>
+                {% if pronostico %}Actualizar pronóstico{% else %}Guardar pronóstico{% endif %}
+              </button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card text-center p-4">
+      <p class="mb-2">Iniciá sesión para pronosticar este partido.</p>
+      <a href="{% url 'accounts:login' %}" class="btn btn-primary">Iniciar sesión</a>
+    </div>
+    {% endif %}
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load chickenfifa_extras %}
+{% block title %}Pronósticos Eliminatorias — ChickenFifa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-diagram-3"></i> Pronósticos — Eliminatorias</h2>
+  <a href="{% url 'predictions:mis_pronosticos' %}" class="btn btn-outline-light btn-sm">
+    <i class="bi bi-list-check"></i> Mis pronósticos
+  </a>
+</div>
+
+{% regroup partidos by get_fase_display as partidos_por_fase %}
+
+{% for fase_entry in partidos_por_fase %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0" style="color:#c9a227;">{{ fase_entry.grouper }}</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr class="text-muted small">
+          <th class="ps-3">Local</th>
+          <th class="text-center">Score</th>
+          <th>Visitante</th>
+          <th class="text-center">Clasifica</th>
+          <th class="text-center">Resultado</th>
+          <th class="text-center">Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for partido in fase_entry.list %}
+        {% with pron_score=pronosticos_score|get_item:partido.pk pron_clf=pronosticos_clf|get_item:partido.pk %}
+        <tr {% if partido.pronosticos_cerrados and not partido.finalizado %}class="locked-overlay"{% endif %}>
+          <td class="ps-3 fw-semibold">{{ partido.nombre_local_display }}</td>
+
+          <!-- Pronóstico de score -->
+          <td class="text-center">
+            {% if partido.finalizado %}
+              {% if pron_score %}
+                <span class="score-box">{{ pron_score.goles_local }}</span>
+                <span class="mx-1 text-muted">–</span>
+                <span class="score-box">{{ pron_score.goles_visitante }}</span>
+              {% else %}
+                <span class="text-muted">–</span>
+              {% endif %}
+            {% elif partido.pronosticos_cerrados %}
+              {% if pron_score %}
+                <span class="score-box">{{ pron_score.goles_local }}</span>
+                <span class="mx-1 text-muted">–</span>
+                <span class="score-box">{{ pron_score.goles_visitante }}</span>
+              {% else %}
+                <span class="badge bg-danger"><i class="bi bi-lock"></i></span>
+              {% endif %}
+            {% elif partido.equipo_local and partido.equipo_visitante %}
+              <form method="post" action="{% url 'predictions:guardar' partido.pk %}"
+                    class="d-flex align-items-center justify-content-center gap-1">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'predictions:eliminatoria' %}">
+                <input type="number" name="goles_local" min="0" max="20"
+                       class="form-control score-input"
+                       value="{% if pron_score %}{{ pron_score.goles_local }}{% endif %}"
+                       required>
+                <span class="text-muted">–</span>
+                <input type="number" name="goles_visitante" min="0" max="20"
+                       class="form-control score-input"
+                       value="{% if pron_score %}{{ pron_score.goles_visitante }}{% endif %}"
+                       required>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="bi bi-check2"></i>
+                </button>
+              </form>
+            {% else %}
+              <span class="text-muted fst-italic small">Por determinar</span>
+            {% endif %}
+          </td>
+
+          <td class="fw-semibold">{{ partido.nombre_visitante_display }}</td>
+
+          <!-- Pronóstico de clasificación -->
+          <td class="text-center">
+            {% if partido.equipo_local and partido.equipo_visitante %}
+              {% if partido.finalizado %}
+                {% if pron_clf %}
+                  <span class="small fw-semibold">{{ pron_clf.equipo_elegido.nombre|default:"–" }}</span>
+                  {% if pron_clf.puntos_otorgados is not None %}
+                    <span class="puntos-badge puntos-{{ pron_clf.puntos_otorgados }} ms-1">
+                      {{ pron_clf.puntos_otorgados }}
+                    </span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">–</span>
+                {% endif %}
+              {% elif not partido.pronosticos_cerrados %}
+                <form method="post" action="{% url 'predictions:guardar' partido.pk %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'predictions:eliminatoria' %}">
+                  <select name="equipo_elegido_clf" class="form-select form-select-sm"
+                          style="max-width:160px;display:inline-block;"
+                          onchange="this.form.submit()">
+                    <option value="">-- Elige --</option>
+                    <option value="{{ partido.equipo_local.pk }}"
+                      {% if pron_clf and pron_clf.equipo_elegido.pk == partido.equipo_local.pk %}selected{% endif %}>
+                      {{ partido.equipo_local.nombre }}
+                    </option>
+                    <option value="{{ partido.equipo_visitante.pk }}"
+                      {% if pron_clf and pron_clf.equipo_elegido.pk == partido.equipo_visitante.pk %}selected{% endif %}>
+                      {{ partido.equipo_visitante.nombre }}
+                    </option>
+                  </select>
+                </form>
+              {% elif pron_clf %}
+                <span class="small">{{ pron_clf.equipo_elegido.nombre|default:"–" }}</span>
+              {% else %}
+                <span class="badge bg-danger"><i class="bi bi-lock"></i></span>
+              {% endif %}
+            {% else %}
+              <span class="text-muted small">TBD</span>
+            {% endif %}
+          </td>
+
+          <!-- Resultado oficial -->
+          <td class="text-center fw-bold">
+            {% if partido.resultado_disponible %}
+              {{ partido.goles_local }}–{{ partido.goles_visitante }}
+              {% if partido.penales_local is not None %}
+                <small class="text-muted d-block">({{ partido.penales_local }}-{{ partido.penales_visitante }})</small>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">–</span>
+            {% endif %}
+          </td>
+
+          <!-- Puntos de score -->
+          <td class="text-center">
+            {% if pron_score and pron_score.puntos_otorgados is not None %}
+              <span class="puntos-badge puntos-{{ pron_score.puntos_otorgados }}">{{ pron_score.puntos_otorgados }}</span>
+            {% else %}
+              <span class="text-muted">–</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+{% if not partidos %}
+<div class="card text-center p-5">
+  <p class="text-muted mb-0">Los partidos eliminatorios aún no han sido definidos.</p>
+</div>
+{% endif %}
+{% endblock %}

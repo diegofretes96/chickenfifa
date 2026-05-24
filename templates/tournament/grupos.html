@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Grupos — ChickenFifa{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-grid-3x3-gap"></i> Fase de Grupos — FIFA 2026</h2>
+
+<div class="row g-4">
+  {% for grupo in grupos_data %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0" style="color:#c9a227;">Grupo {{ grupo.letra }}</h5>
+        <span class="badge bg-secondary">{{ grupo.equipos.count }} equipos</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 small">
+          <thead>
+            <tr class="text-muted">
+              <th class="ps-3">Equipo</th>
+              <th class="text-center">PJ</th>
+              <th class="text-center">G</th>
+              <th class="text-center">E</th>
+              <th class="text-center">P</th>
+              <th class="text-center">DG</th>
+              <th class="text-center fw-bold">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for equipo in grupo.equipos %}
+            <tr {% if equipo.clasifico %}class="table-success bg-opacity-10"{% endif %}>
+              <td class="ps-3 fw-semibold">
+                {% if equipo.clasifico %}<i class="bi bi-check2-circle text-success"></i>{% endif %}
+                {{ equipo.nombre }}
+                <small class="text-muted">({{ equipo.codigo_fifa }})</small>
+              </td>
+              <td class="text-center">{{ equipo.partidos_jugados }}</td>
+              <td class="text-center">{{ equipo.victorias }}</td>
+              <td class="text-center">{{ equipo.empates }}</td>
+              <td class="text-center">{{ equipo.derrotas }}</td>
+              <td class="text-center">{{ equipo.diferencia_goles }}</td>
+              <td class="text-center fw-bold" style="color:#c9a227;">{{ equipo.puntos_grupo }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-3">Sin equipos cargados</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
