@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load chickenfifa_extras %}
 {% block title %}Pronósticos Fase de Grupos — ChickenFifa{% endblock %}
 
 {% block content %}
@@ -13,7 +14,7 @@
 {% for grupo_entry in partidos_por_grupo %}
 <div class="card mb-4">
   <div class="card-header">
-    <h5 class="mb-0" style="color:#c9a227;">Grupo {{ grupo_entry.grouper }}</h5>
+    <h5 class="mb-0">Grupo {{ grupo_entry.grouper }}</h5>
   </div>
   <div class="card-body p-0">
     <table class="table table-sm mb-0">
@@ -21,7 +22,7 @@
         <tr class="text-muted small">
           <th class="ps-3">Fecha</th>
           <th>Local</th>
-          <th class="text-center">Pronóstico</th>
+          <th class="text-center">Tu pronóstico</th>
           <th>Visitante</th>
           <th class="text-center">Resultado</th>
           <th class="text-center">Pts</th>
@@ -29,39 +30,34 @@
       </thead>
       <tbody>
         {% for partido in grupo_entry.list %}
-        {% with pron=pronosticos_usuario|default:{}  %}
+        {% with pron=pronosticos_usuario|get_item:partido.pk %}
         <tr {% if partido.pronosticos_cerrados and not partido.finalizado %}class="locked-overlay"{% endif %}>
           <td class="ps-3 text-muted small">{{ partido.fecha_hora|date:"d/m H:i" }}</td>
           <td class="fw-semibold">{{ partido.nombre_local_display }}</td>
           <td class="text-center">
             {% if partido.finalizado %}
-              <!-- Partido finalizado: solo mostrar pronóstico -->
-              {% with pron=pronosticos_usuario %}
-                {% if partido.pk in pron %}
-                  {% with p=pron|default:{}%}
-                  <span class="score-box">{{ pron.partido.pk }}</span>
-                  {% endwith %}
-                {% endif %}
-              {% endwith %}
-              <!-- Mostrar pronóstico si existe -->
-              <span class="text-muted small">
-                {% for pid, p in pronosticos_usuario.items %}
-                  {% if p.partido_id == partido.pk %}{{ p.goles_local }}–{{ p.goles_visitante }}{% endif %}
-                {% endfor %}
-              </span>
+              {% if pron %}
+                <span class="fw-bold">{{ pron.goles_local }}–{{ pron.goles_visitante }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
             {% elif partido.pronosticos_cerrados %}
-              <span class="badge bg-danger"><i class="bi bi-lock"></i> Cerrado</span>
+              {% if pron %}
+                <span class="fw-bold">{{ pron.goles_local }}–{{ pron.goles_visitante }}</span>
+              {% else %}
+                <span class="badge bg-danger"><i class="bi bi-lock"></i> Sin pronóstico</span>
+              {% endif %}
             {% else %}
               <form method="post" action="{% url 'predictions:guardar' partido.pk %}" class="d-flex align-items-center gap-2 justify-content-center">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{% url 'predictions:grupo' %}">
                 <input type="number" name="goles_local" min="0" max="20"
                        class="form-control score-input"
-                       value="{% for pid, p in pronosticos_usuario.items %}{% if p.partido_id == partido.pk %}{{ p.goles_local }}{% endif %}{% endfor %}">
+                       value="{{ pron.goles_local|default:'' }}">
                 <span class="text-muted">–</span>
                 <input type="number" name="goles_visitante" min="0" max="20"
                        class="form-control score-input"
-                       value="{% for pid, p in pronosticos_usuario.items %}{% if p.partido_id == partido.pk %}{{ p.goles_visitante }}{% endif %}{% endfor %}">
+                       value="{{ pron.goles_visitante|default:'' }}">
                 <button type="submit" class="btn btn-primary btn-sm">
                   <i class="bi bi-check2"></i>
                 </button>
@@ -73,15 +69,13 @@
             {% if partido.resultado_disponible %}
               {{ partido.goles_local }} – {{ partido.goles_visitante }}
             {% else %}
-              <span class="text-muted">-</span>
+              <span class="text-muted">–</span>
             {% endif %}
           </td>
           <td class="text-center">
-            {% for pid, p in pronosticos_usuario.items %}
-              {% if p.partido_id == partido.pk and p.puntos_otorgados is not None %}
-                <span class="puntos-badge puntos-{{ p.puntos_otorgados }}">{{ p.puntos_otorgados }}</span>
-              {% endif %}
-            {% endfor %}
+            {% if pron and pron.puntos_otorgados is not None %}
+              <span class="puntos-badge puntos-{{ pron.puntos_otorgados }}">{{ pron.puntos_otorgados }}</span>
+            {% endif %}
           </td>
         </tr>
         {% endwith %}
