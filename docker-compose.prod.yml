@@ -13,6 +13,8 @@ services:
       target: runner
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app                                          # código live: git pull = deploy inmediato
       - ./docker/entrypoint.sh:/entrypoint.sh           # entrypoint live, no requiere rebuild
