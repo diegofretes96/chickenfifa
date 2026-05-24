@@ -6,7 +6,11 @@ version: "3.9"
 
 services:
   web:
-    image: ${OCI_REGISTRY}/${OCI_NAMESPACE}/${OCI_REPO_NAME}:${IMAGE_TAG:-latest}
+    image: ${WEB_IMAGE:-chicken-web}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
     volumes:
@@ -15,7 +19,11 @@ services:
     # En producción NO montamos el código fuente como volumen
 
   celery:
-    image: ${OCI_REGISTRY}/${OCI_NAMESPACE}/${OCI_REPO_NAME}:${IMAGE_TAG:-latest}
+    image: ${CELERY_IMAGE:-chicken-celery}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
 
