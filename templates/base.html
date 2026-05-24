@@ -8,22 +8,46 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
   <style>
+    /* Sobreescribir variables CSS de Bootstrap para tema oscuro */
+    :root {
+      --bs-body-color: #e8eaf0;
+      --bs-body-bg: #0a0f1e;
+      --bs-secondary-color: #8899b0;
+      --bs-card-bg: #131929;
+      --bs-card-cap-bg: #1a2340;
+      --bs-card-border-color: #1e2a45;
+      --bs-card-color: #e8eaf0;
+      --bs-table-color: #e8eaf0;
+      --bs-table-bg: transparent;
+      --bs-table-border-color: #1e2a45;
+      --bs-table-striped-bg: rgba(30,42,69,.4);
+      --bs-dropdown-bg: #1a2340;
+      --bs-dropdown-color: #e8eaf0;
+      --bs-dropdown-border-color: #1e2a45;
+      --bs-dropdown-link-color: #e8eaf0;
+      --bs-dropdown-link-hover-color: #c9a227;
+      --bs-dropdown-link-hover-bg: #0d1428;
+      --bs-dropdown-divider-bg: #1e2a45;
+    }
     body { background: #0a0f1e; color: #e8eaf0; font-family: 'Segoe UI', sans-serif; }
     .navbar { background: linear-gradient(135deg, #1a1f3e 0%, #0d1428 100%); border-bottom: 2px solid #c9a227; }
     .navbar-brand { color: #c9a227 !important; font-weight: 800; font-size: 1.4rem; }
     .nav-link { color: #b0b8d0 !important; transition: color .2s; }
     .nav-link:hover, .nav-link.active { color: #c9a227 !important; }
-    .card { background: #131929; border: 1px solid #1e2a45; border-radius: 12px; }
-    .card-header { background: #1a2340; border-bottom: 1px solid #1e2a45; }
+    .card { background: #131929; border: 1px solid #1e2a45; border-radius: 12px; color: #e8eaf0; }
+    .card-header { background: #1a2340; border-bottom: 1px solid #1e2a45; color: #c9a227; }
+    .card-header h5, .card-header h6 { color: #c9a227; }
+    .text-muted { color: #8899b0 !important; }
     .btn-primary { background: #c9a227; border-color: #c9a227; color: #0a0f1e; font-weight: 600; }
     .btn-primary:hover { background: #e8b830; border-color: #e8b830; color: #0a0f1e; }
     .badge-pts { background: #c9a227; color: #0a0f1e; font-weight: 700; }
     .table { color: #e8eaf0; }
-    .table > :not(caption) > * > * { background: transparent; border-color: #1e2a45; }
+    .table > :not(caption) > * > * { background: transparent; border-color: #1e2a45; color: #e8eaf0; }
     .form-control, .form-select { background: #0d1428; border-color: #1e2a45; color: #e8eaf0; }
     .form-control:focus, .form-select:focus { background: #131929; border-color: #c9a227; color: #e8eaf0; box-shadow: 0 0 0 .25rem rgba(201,162,39,.25); }
+    .form-label { color: #b0b8d0; }
     footer { background: #0d1428; border-top: 1px solid #1e2a45; color: #556080; }
-    .score-box { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#1e2a45; border-radius:8px; font-weight:700; font-size:1.1rem; }
+    .score-box { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; background:#1e2a45; border-radius:8px; font-weight:700; font-size:1.1rem; color:#e8eaf0; }
     .score-input { width:60px; text-align:center; font-weight:700; font-size:1.1rem; }
     .puntos-badge { display:inline-block; padding:.25em .6em; border-radius:6px; font-weight:700; font-size:.85rem; }
     .puntos-5 { background:#1a7a3e; color:#fff; }
@@ -33,6 +57,10 @@
     .tendencia-up { color: #1aff7a; }
     .tendencia-down { color: #ff4444; }
     .locked-overlay { opacity:.5; pointer-events:none; }
+    .alert-success { background:#0d3320; border-color:#1a7a3e; color:#6dffaa; }
+    .alert-danger  { background:#3a0d0d; border-color:#7a1a1a; color:#ff8888; }
+    .alert-warning { background:#3a2a00; border-color:#7a5a00; color:#ffd966; }
+    .alert-info    { background:#0d2040; border-color:#1a4080; color:#88bbff; }
   </style>
   {% block extra_css %}{% endblock %}
 </head>
