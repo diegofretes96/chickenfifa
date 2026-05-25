@@ -16,6 +16,7 @@
 | **Grupos privados** | Crea tu grupo con un código de invitación único |
 | **Tabla en vivo** | Clasificación global y por grupo privado con tendencia (↑↓=) |
 | **Admin potenciado** | Registra resultados oficiales → recálculo asíncrono de puntos vía Celery |
+| **Banderas de países** | Iconos de bandera via `flag-icons` CSS para los 48 equipos participantes |
 
 ---
 
@@ -29,6 +30,7 @@ Servidor    Gunicorn · Nginx · Let's Encrypt (HTTPS)
 Infra       Docker (multi-stage) · Docker Compose
 CI/CD       GitHub Actions → OCIR (Oracle Container Registry) → OCI Compute
 DNS         DuckDNS (dominio gratuito)
+UI          Bootstrap 5.3 · Bootstrap Icons · flag-icons 7.2
 ```
 
 ---
@@ -48,6 +50,17 @@ Final                1 partido
 ─────────────────────────────────────────────────
 TOTAL              104 partidos
 ```
+
+---
+
+## Changelog
+
+### v1.1.0 — 2026-05-25
+
+- **UI pronósticos rediseñada**: nueva vista de fase de grupos con panel lateral de navegación por grupo y tarjetas horizontales de partido (inspirado en F5 LATAM Cup).
+- **Banderas de países**: integración de `flag-icons` CSS — cada equipo muestra su bandera nacional. Mapeo FIFA 3 letras → ISO 3166-1 alpha-2 para todos los grupos confederados (CONCACAF, CONMEBOL, UEFA, CAF, AFC, OFC).
+- **Corrección marcador 0 goles**: el filtro `|default:''` trataba `0` como valor nulo y dejaba el campo vacío. Corregido con `|default_if_none:''` para mostrar correctamente el 0.
+- **Registro simplificado**: el formulario de registro ahora solo requiere nombre de usuario y contraseña — se eliminó el campo de correo electrónico que no tenía uso funcional.
 
 ---
 
