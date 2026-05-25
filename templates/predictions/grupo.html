@@ -4,91 +4,171 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h2><i class="bi bi-pencil-square"></i> Pronósticos — Fase de Grupos</h2>
+  <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Pronósticos — Fase de Grupos</h4>
   <a href="{% url 'predictions:mis_pronosticos' %}" class="btn btn-outline-light btn-sm">
     <i class="bi bi-list-check"></i> Mis pronósticos
   </a>
 </div>
 
+{% if partidos %}
 {% regroup partidos by grupo as partidos_por_grupo %}
-{% for grupo_entry in partidos_por_grupo %}
-<div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Grupo {{ grupo_entry.grouper }}</h5>
-  </div>
-  <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead>
-        <tr class="text-muted small">
-          <th class="ps-3">Fecha</th>
-          <th>Local</th>
-          <th class="text-center">Tu pronóstico</th>
-          <th>Visitante</th>
-          <th class="text-center">Resultado</th>
-          <th class="text-center">Pts</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for partido in grupo_entry.list %}
-        {% with pron=pronosticos_usuario|get_item:partido.pk %}
-        <tr {% if partido.pronosticos_cerrados and not partido.finalizado %}class="locked-overlay"{% endif %}>
-          <td class="ps-3 text-muted small">{{ partido.fecha_hora|date:"d/m H:i" }}</td>
-          <td class="fw-semibold">{{ partido.nombre_local_display }}</td>
-          <td class="text-center">
-            {% if partido.finalizado %}
-              {% if pron %}
-                <span class="fw-bold">{{ pron.goles_local }}–{{ pron.goles_visitante }}</span>
-              {% else %}
-                <span class="text-muted">—</span>
-              {% endif %}
-            {% elif partido.pronosticos_cerrados %}
-              {% if pron %}
-                <span class="fw-bold">{{ pron.goles_local }}–{{ pron.goles_visitante }}</span>
-              {% else %}
-                <span class="badge bg-danger"><i class="bi bi-lock"></i> Sin pronóstico</span>
-              {% endif %}
-            {% else %}
-              <form method="post" action="{% url 'predictions:guardar' partido.pk %}" class="d-flex align-items-center gap-2 justify-content-center">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{% url 'predictions:grupo' %}">
-                <input type="number" name="goles_local" min="0" max="20"
-                       class="form-control score-input"
-                       value="{{ pron.goles_local|default:'' }}">
-                <span class="text-muted">–</span>
-                <input type="number" name="goles_visitante" min="0" max="20"
-                       class="form-control score-input"
-                       value="{{ pron.goles_visitante|default:'' }}">
-                <button type="submit" class="btn btn-primary btn-sm">
-                  <i class="bi bi-check2"></i>
-                </button>
-              </form>
-            {% endif %}
-          </td>
-          <td class="fw-semibold">{{ partido.nombre_visitante_display }}</td>
-          <td class="text-center fw-bold">
-            {% if partido.resultado_disponible %}
-              {{ partido.goles_local }} – {{ partido.goles_visitante }}
-            {% else %}
-              <span class="text-muted">–</span>
-            {% endif %}
-          </td>
-          <td class="text-center">
-            {% if pron and pron.puntos_otorgados is not None %}
-              <span class="puntos-badge puntos-{{ pron.puntos_otorgados }}">{{ pron.puntos_otorgados }}</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endwith %}
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endfor %}
 
-{% if not partidos %}
+<div class="d-flex gap-3" style="align-items: flex-start;">
+
+  <!-- Sidebar: navegación por grupo -->
+  <div style="width: 140px; flex-shrink: 0;">
+    <div class="card">
+      <div class="card-body p-2">
+        <div class="nav flex-column nav-pills" id="grupo-tabs" role="tablist">
+          {% for grupo_entry in partidos_por_grupo %}
+          <a class="nav-link py-2 px-3 my-0 grupo-tab-link {% if forloop.first %}active{% endif %}"
+             id="tab-{{ grupo_entry.grouper }}"
+             href="#panel-{{ grupo_entry.grouper }}"
+             role="tab"
+             data-bs-toggle="tab"
+             aria-controls="panel-{{ grupo_entry.grouper }}"
+             aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+            Grupo {{ grupo_entry.grouper }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel de partidos -->
+  <div class="flex-grow-1">
+    <div class="tab-content">
+      {% for grupo_entry in partidos_por_grupo %}
+      <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+           id="panel-{{ grupo_entry.grouper }}"
+           role="tabpanel"
+           aria-labelledby="tab-{{ grupo_entry.grouper }}">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">Grupo {{ grupo_entry.grouper }}</span>
+            <span class="text-muted small">{{ grupo_entry.list|length }} partido{{ grupo_entry.list|length|pluralize }}</span>
+          </div>
+          <div class="card-body p-0">
+            {% for partido in grupo_entry.list %}
+            {% with pron=pronosticos_usuario|get_item:partido.pk %}
+            <div class="partido-row d-flex align-items-center gap-2 px-3 py-3
+                        {% if not forloop.last %}border-bottom border-dark{% endif %}
+                        {% if partido.pronosticos_cerrados and not partido.finalizado %}locked-overlay{% endif %}">
+
+              <!-- Equipo local -->
+              <div class="d-flex align-items-center justify-content-end text-end"
+                   style="flex: 1 1 0; min-width: 0;">
+                <span class="fw-semibold text-truncate">{{ partido.nombre_local_display }}</span>
+              </div>
+
+              <!-- Área central: pronóstico + fecha -->
+              <div class="d-flex flex-column align-items-center" style="flex: 0 0 auto; min-width: 180px;">
+                {% if partido.finalizado %}
+                  {% if pron %}
+                    <div class="d-flex align-items-center gap-1">
+                      <span class="score-box">{{ pron.goles_local }}</span>
+                      <span class="text-muted">–</span>
+                      <span class="score-box">{{ pron.goles_visitante }}</span>
+                    </div>
+                  {% else %}
+                    <span class="text-muted small">Sin pronóstico</span>
+                  {% endif %}
+                  {% if partido.resultado_disponible %}
+                  <div class="text-muted small mt-1">
+                    Res: <strong>{{ partido.goles_local }}–{{ partido.goles_visitante }}</strong>
+                    {% if pron and pron.puntos_otorgados is not None %}
+                      <span class="puntos-badge puntos-{{ pron.puntos_otorgados }} ms-1">{{ pron.puntos_otorgados }}pts</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                {% elif partido.pronosticos_cerrados %}
+                  {% if pron %}
+                    <div class="d-flex align-items-center gap-1">
+                      <span class="score-box">{{ pron.goles_local }}</span>
+                      <span class="text-muted">–</span>
+                      <span class="score-box">{{ pron.goles_visitante }}</span>
+                    </div>
+                  {% else %}
+                    <span class="badge bg-danger"><i class="bi bi-lock-fill me-1"></i>Sin pronóstico</span>
+                  {% endif %}
+                  <div class="text-muted small mt-1">
+                    <i class="bi bi-lock-fill me-1"></i>Cerrado
+                  </div>
+                {% else %}
+                  <form method="post" action="{% url 'predictions:guardar' partido.pk %}"
+                        class="d-flex align-items-center gap-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'predictions:grupo' %}">
+                    <input type="number" name="goles_local" min="0" max="20"
+                           class="form-control score-input"
+                           value="{{ pron.goles_local|default:'' }}">
+                    <span class="text-muted">–</span>
+                    <input type="number" name="goles_visitante" min="0" max="20"
+                           class="form-control score-input"
+                           value="{{ pron.goles_visitante|default:'' }}">
+                    <button type="submit" class="btn btn-primary btn-sm px-2">
+                      <i class="bi bi-check2"></i>
+                    </button>
+                  </form>
+                  {% if pron %}
+                    <div class="text-muted small mt-1">Guardado</div>
+                  {% else %}
+                    <div class="text-muted small mt-1">No pronosticado</div>
+                  {% endif %}
+                {% endif %}
+                <div class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">
+                  <i class="bi bi-calendar3 me-1"></i>{{ partido.fecha_hora|date:"d/m H:i" }}
+                </div>
+              </div>
+
+              <!-- Equipo visitante -->
+              <div class="d-flex align-items-center justify-content-start"
+                   style="flex: 1 1 0; min-width: 0;">
+                <span class="fw-semibold text-truncate">{{ partido.nombre_visitante_display }}</span>
+              </div>
+
+            </div>
+            {% endwith %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+{% else %}
 <div class="card text-center p-5">
   <p class="text-muted mb-0">Los partidos de la fase de grupos aún no han sido cargados.</p>
 </div>
 {% endif %}
+
+<style>
+.grupo-tab-link {
+  color: #8899b0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.grupo-tab-link:hover {
+  color: #c9a227;
+  background: rgba(201,162,39,0.08);
+}
+.grupo-tab-link.active {
+  background: #c9a227;
+  color: #0a0f1e !important;
+  font-weight: 600;
+}
+.partido-row {
+  transition: background 0.15s;
+}
+.partido-row:hover {
+  background: rgba(201,162,39,0.04);
+}
+.partido-row.locked-overlay {
+  opacity: 0.65;
+}
+</style>
 {% endblock %}
