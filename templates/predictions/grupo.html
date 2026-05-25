@@ -57,9 +57,12 @@
                         {% if partido.pronosticos_cerrados and not partido.finalizado %}locked-overlay{% endif %}">
 
               <!-- Equipo local -->
-              <div class="d-flex align-items-center justify-content-end text-end"
+              <div class="d-flex align-items-center justify-content-end gap-2 text-end"
                    style="flex: 1 1 0; min-width: 0;">
                 <span class="fw-semibold text-truncate">{{ partido.nombre_local_display }}</span>
+                {% if partido.equipo_local %}
+                <span class="fi fi-{{ partido.equipo_local|bandera_iso2 }} flag-icon-md flex-shrink-0"></span>
+                {% endif %}
               </div>
 
               <!-- Área central: pronóstico + fecha -->
@@ -102,11 +105,11 @@
                     <input type="hidden" name="next" value="{% url 'predictions:grupo' %}">
                     <input type="number" name="goles_local" min="0" max="20"
                            class="form-control score-input"
-                           value="{{ pron.goles_local|default:'' }}">
+                           value="{{ pron.goles_local|default_if_none:'' }}">
                     <span class="text-muted">–</span>
                     <input type="number" name="goles_visitante" min="0" max="20"
                            class="form-control score-input"
-                           value="{{ pron.goles_visitante|default:'' }}">
+                           value="{{ pron.goles_visitante|default_if_none:'' }}">
                     <button type="submit" class="btn btn-primary btn-sm px-2">
                       <i class="bi bi-check2"></i>
                     </button>
@@ -123,8 +126,11 @@
               </div>
 
               <!-- Equipo visitante -->
-              <div class="d-flex align-items-center justify-content-start"
+              <div class="d-flex align-items-center justify-content-start gap-2"
                    style="flex: 1 1 0; min-width: 0;">
+                {% if partido.equipo_visitante %}
+                <span class="fi fi-{{ partido.equipo_visitante|bandera_iso2 }} flag-icon-md flex-shrink-0"></span>
+                {% endif %}
                 <span class="fw-semibold text-truncate">{{ partido.nombre_visitante_display }}</span>
               </div>
 
@@ -169,6 +175,11 @@
 }
 .partido-row.locked-overlay {
   opacity: 0.65;
+}
+.flag-icon-md {
+  width: 1.5em;
+  height: 1.125em;
+  border-radius: 2px;
 }
 </style>
 {% endblock %}
