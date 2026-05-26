@@ -9,6 +9,7 @@ urlpatterns = [
     path("torneo/", include("apps.tournament.urls", namespace="tournament")),
     path("pronosticos/", include("apps.predictions.urls", namespace="predictions")),
     path("clasificacion/", include("apps.leaderboard.urls", namespace="leaderboard")),
+    path("apuestas/", include("apps.bets.urls", namespace="bets")),
     path("", include("apps.tournament.urls_home")),
 ]
 
