@@ -18,8 +18,8 @@ services:
     volumes:
       - .:/app                                          # código live: git pull = deploy inmediato
       - ./docker/entrypoint.sh:/entrypoint.sh           # entrypoint live, no requiere rebuild
-      - media_data:/app/mediafiles
-      - static_data:/app/staticfiles
+      - /opt/chickenfifa/mediafiles:/app/mediafiles
+      - /opt/chickenfifa/staticfiles:/app/staticfiles
 
   celery:
     image: ${CELERY_IMAGE:-chicken-celery}
