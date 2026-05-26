@@ -1,6 +1,8 @@
 """
 Configuración de producción (OCI).
 """
+import os
+
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -21,9 +23,9 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{host}"
-    for host in env.list("ALLOWED_HOSTS", default=[])
-    if host not in ("*", "localhost", "127.0.0.1")
+    f"https://{h.strip()}"
+    for h in os.environ.get("ALLOWED_HOSTS", "").split(",")
+    if h.strip() and h.strip() not in ("*", "localhost", "127.0.0.1")
 ]
 
 # ---------------------------------------------------------------------------
