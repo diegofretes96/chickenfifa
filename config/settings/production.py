@@ -20,7 +20,11 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
-CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host != "*"]
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{host}"
+    for host in env.list("ALLOWED_HOSTS", default=[])
+    if host not in ("*", "localhost", "127.0.0.1")
+]
 
 # ---------------------------------------------------------------------------
 # Email (SMTP en producción)
